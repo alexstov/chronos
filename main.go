@@ -10,7 +10,7 @@ func main() {
 	// Start RTM
 	var cap *rtm.Capture
 	var capErr error
-	if cap, capErr = rtm.BeginCapture("TestApp"); capErr != nil {
+	if cap, capErr = rtm.BeginCapture("TestApp", rtm.ConfigOption{Option: rtm.Units, Value: rtm.Nanoseconds}); capErr != nil {
 		logrus.Error("")
 	} else {
 		defer cap.Finish()

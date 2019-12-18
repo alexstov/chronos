@@ -9,12 +9,26 @@ import (
 	"time"
 )
 
-// Units of duration
-type Units int
+// Option of the capture.
+type Option int
+
+const (
+	// Units to output monitor time i.e. nanoseconds(ns). etc.
+	Units Option = iota
+)
+
+// ConfigOption of th capture
+type ConfigOption struct {
+	Option Option
+	Value  interface{}
+}
+
+// DurationUnits of duration
+type DurationUnits int
 
 const (
 	// Nanoseconds ...
-	Nanoseconds Units = iota
+	Nanoseconds DurationUnits = iota
 	// Microseconds ...
 	Microseconds
 	// Milliseconds ...
@@ -39,11 +53,11 @@ type Capture struct {
 	elapsed     *Monitor
 	Unknown     time.Duration
 	aggregators map[string]*Aggregator
-	units       Units
+	units       DurationUnits
 }
 
 // BeginCapture starts a new capture.
-func BeginCapture(name string, args ...interface{}) (cap *Capture, err error) {
+func BeginCapture(name string, options ...interface{}) (cap *Capture, err error) {
 	var capID guuid.UUID
 
 	if capID, err = guuid.NewRandom(); err != nil {
@@ -52,6 +66,18 @@ func BeginCapture(name string, args ...interface{}) (cap *Capture, err error) {
 	}
 
 	c := Capture{Name: name, ID: capID, elapsed: NewMonitor(totalArea), aggregators: make(map[string]*Aggregator), units: Milliseconds}
+
+	// TODO: Set options in a function
+	for _, o := range options {
+		ops, ok := o.(ConfigOption)
+		if ok {
+			switch ops.Option {
+			case Units:
+				c.units, ok = ops.Value.(DurationUnits)
+			}
+		}
+	}
+
 	c.elapsed.Start()
 
 	return &c, err
@@ -112,7 +138,7 @@ func (cap *Capture) Log() {
 	log.Info(buf.String())
 }
 
-func durationString(duration time.Duration, units Units) string {
+func durationString(duration time.Duration, units DurationUnits) string {
 	switch units {
 	case Nanoseconds:
 		return strconv.FormatInt(duration.Nanoseconds(), 10) + "ns"

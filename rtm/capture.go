@@ -1,123 +1,132 @@
 package rtm
 
 import (
+	"bytes"
+	"fmt"
 	guuid "github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"time"
 )
 
+// Units of duration
+type Units int
+
+const (
+	// Nanoseconds ...
+	Nanoseconds Units = iota
+	// Microseconds ...
+	Microseconds
+	// Milliseconds ...
+	Milliseconds
+	// Seconds ...
+	Seconds
+	// Minutes ...
+	Minutes
+	// Hours ...
+	Hours
+)
+
+// TODO: move these to config
+const totalArea = "Total"
+const unknownArea = "Unknown"
+const initMonitorSize = 0
+
 // Capture benchmarks API Capture
 type Capture struct {
-	TxnID  guuid.UUID
-	Type   API
-	OpsMap map[OpsID]*Monitor
+	Name        string
+	ID          guuid.UUID
+	elapsed     *Monitor
+	Unknown     time.Duration
+	aggregators map[string]*Aggregator
+	units       Units
 }
 
-// Init adds all operations to the Capture map at once,
-// required when defer is used to reference the operations map since
-// defer value and parameters to the call are evaluate at the time of the call.
-// See GoLand doumentation for defer.
-func (txn *Capture) init() {
-	switch txn.Type {
-	case APIPostReplacementOffer:
-		txn.OpsMap[OpsTotal] = NewMonitor(OpsTotal)
-		txn.OpsMap[OpsCustomer] = NewMonitor(OpsCustomer)
-		txn.OpsMap[OpsMongoDB] = NewMonitor(OpsMongoDB)
-		txn.OpsMap[OpsSendEmail] = NewMonitor(OpsSendEmail)
-		break
-	case APIPostReplacementPurchase:
-		txn.initAllMonitors()
-		break
-	}
-}
+// BeginCapture starts a new capture.
+func BeginCapture(name string, args ...interface{}) (cap *Capture, err error) {
+	var capID guuid.UUID
 
-func (txn *Capture) initAllMonitors() {
-	txn.OpsMap[OpsTotal] = NewMonitor(OpsTotal)
-	txn.OpsMap[OpsUnknown] = NewMonitor(OpsUnknown)
-	txn.OpsMap[OpsCustomer] = NewMonitor(OpsCustomer)
-	txn.OpsMap[OpsMongoDB] = NewMonitor(OpsMongoDB)
-	txn.OpsMap[OpsSendEmail] = NewMonitor(OpsSendEmail)
-	txn.OpsMap[OpsAddress] = NewMonitor(OpsAddress)
-	txn.OpsMap[OpsPayment] = NewMonitor(OpsPayment)
-	txn.OpsMap[OpsWeDeliver] = NewMonitor(OpsWeDeliver)
-}
-
-// Start starts operation RTM capture
-func (txn *Capture) Start(opsID OpsID) {
-	if txn == nil {
-		return
+	if capID, err = guuid.NewRandom(); err != nil {
+		log.Errorf("RTM NewRandom failed to generate Capture ID for <%v>.", name)
+		return nil, err
 	}
 
-	var ops *Monitor
-	var has bool
+	c := Capture{Name: name, ID: capID, elapsed: NewMonitor(totalArea), aggregators: make(map[string]*Aggregator), units: Milliseconds}
+	c.elapsed.Start()
 
-	if ops, has = txn.OpsMap[opsID]; !has {
-		ops = NewMonitor(opsID)
-		txn.OpsMap[opsID] = ops
-	}
-	ops.Start(opsID)
-}
-
-// Elapsed adds operation RTM elapsed time since the last start
-func (txn *Capture) Elapsed(opsID OpsID) {
-	var ops *Monitor
-	var has bool
-
-	if ops, has = txn.OpsMap[opsID]; !has {
-		log.Errorf("RTM mismatched call for %v", opsID.String())
-		//ops = NewMonitor(opsID)
-	}
-	ops.Elapsed()
-}
-
-// LogWarn logs Capture monitors as Warn message.
-func (txn *Capture) LogWarn() {
-	log.Warningf("RTM %v: TxnID <%v>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>.",
-		txn.Type, txn.TxnID,
-		OpsTotal.String(), txn.OpsMap[OpsTotal].Milliseconds(),
-		OpsUnknown.String(), txn.OpsMap[OpsUnknown].Milliseconds(),
-		OpsMongoDB.String(), txn.OpsMap[OpsMongoDB].Milliseconds(),
-		OpsCustomer.String(), txn.OpsMap[OpsCustomer].Milliseconds(),
-		OpsSendEmail.String(), txn.OpsMap[OpsSendEmail].Milliseconds(),
-		OpsAddress.String(), txn.OpsMap[OpsAddress].Milliseconds(),
-		OpsPayment.String(), txn.OpsMap[OpsPayment].Milliseconds(),
-		OpsWeDeliver.String(), txn.OpsMap[OpsWeDeliver].Milliseconds())
-}
-
-// LogInfo logs Capture monitors as Info message.
-func (txn *Capture) LogInfo() {
-	log.Infof("RTM %v: TxnID <%v>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>, %v <%dms>.",
-		txn.Type, txn.TxnID,
-		OpsTotal.String(), txn.OpsMap[OpsTotal].Milliseconds(),
-		OpsUnknown.String(), txn.OpsMap[OpsUnknown].Milliseconds(),
-		OpsMongoDB.String(), txn.OpsMap[OpsMongoDB].Milliseconds(),
-		OpsCustomer.String(), txn.OpsMap[OpsCustomer].Milliseconds(),
-		OpsSendEmail.String(), txn.OpsMap[OpsSendEmail].Milliseconds(),
-		OpsAddress.String(), txn.OpsMap[OpsAddress].Milliseconds(),
-		OpsPayment.String(), txn.OpsMap[OpsPayment].Milliseconds(),
-		OpsWeDeliver.String(), txn.OpsMap[OpsWeDeliver].Milliseconds())
+	return &c, err
 }
 
 // Finish captures elapsed monitors, logs Capture info, and ends it.
-func (txn *Capture) Finish() {
+func (cap *Capture) Finish() {
+	for _, a := range cap.aggregators {
+		a.Aggregate()
+	}
+	var aggrTotal time.Duration
+	for _, a := range cap.aggregators {
+		aggrTotal += a.Elapsed
+	}
+	cap.elapsed.Elapsed()
 
-	var calcTotal time.Duration
-	for k, v := range txn.OpsMap {
-		if v.running {
-			if k != OpsTotal {
-				log.Warnf("RTM monitor %v is still running. Capturing the monitor.", k.String())
-			}
+	cap.Unknown = cap.elapsed.elapsed - aggrTotal
 
-			txn.Elapsed(k)
-		}
+	cap.Log()
+}
 
-		if k != OpsTotal && k != OpsUnknown {
-			calcTotal += v.elapsed
-		}
+// Start starts RTM area capture
+func (cap *Capture) Start(sector string) (mon *Monitor) {
+	if cap == nil {
+		return
 	}
 
-	txn.OpsMap[OpsUnknown].elapsed = txn.OpsMap[OpsTotal].elapsed - calcTotal
+	var aggr *Aggregator
+	var has bool
 
-	txn.LogInfo()
-	// Global.EndTransaction(txn.TxnID)
+	// TODO: start immediately, add in another goroutine, signal
+	mon = NewMonitor(sector) // TODO: NewMonitor returns pre-created monitor?
+	if aggr, has = cap.aggregators[sector]; !has {
+		aggr = NewAggregator(sector) // TODO: NewAggregator returns pre-created aggregator?
+		cap.aggregators[sector] = aggr
+	}
+	aggr.Add(mon)
+	mon.Start()
+
+	return mon
+}
+
+// Log logs Capture monitors as Info message.
+func (cap *Capture) Log() {
+	var buf bytes.Buffer
+
+	fmt.Fprintf(&buf, "RTM %v, ID <%v>: Total <%v>, ", cap.Name, cap.ID, durationString(cap.elapsed.elapsed, cap.units))
+
+	for _, a := range cap.aggregators {
+		buf.WriteString(a.Area)
+		buf.WriteString(" <")
+		buf.WriteString(durationString(a.Elapsed, cap.units))
+		buf.WriteString(">, ")
+	}
+	buf.Truncate(buf.Len() - 2)
+	buf.WriteString(".")
+
+	log.Info(buf.String())
+}
+
+func durationString(duration time.Duration, units Units) string {
+	switch units {
+	case Nanoseconds:
+		return strconv.FormatInt(duration.Nanoseconds(), 10) + "ns"
+	case Microseconds:
+		return strconv.FormatInt(duration.Microseconds(), 10) + "us"
+	case Milliseconds:
+		return strconv.FormatInt(duration.Milliseconds(), 10) + "ms"
+	case Seconds:
+		return strconv.FormatFloat(duration.Seconds(), 'f', 6, 64) + "s"
+	case Minutes:
+		return strconv.FormatFloat(duration.Minutes(), 'f', 6, 64) + "min"
+	case Hours:
+		return strconv.FormatFloat(duration.Hours(), 'f', 6, 64) + "h"
+	default:
+		return strconv.FormatInt(duration.Milliseconds(), 10) + "ms"
+	}
 }

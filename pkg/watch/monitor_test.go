@@ -1,4 +1,4 @@
-package rtm
+package watch
 
 import (
 	"gotest.tools/assert"
@@ -16,7 +16,7 @@ func TestMonitorNewMonitor(t *testing.T) {
 		t.Logf("\tTest 0:\tWhen calling %v.", target)
 		{
 			area = generateRandomString(8)
-			m = NewMonitor(area)
+			m, _ = NewMonitor(area)
 		}
 	}
 	assert.Assert(t, m != nil)
@@ -38,7 +38,7 @@ func TestMonitorNilPtr(t *testing.T) {
 		t.Logf("\tTest 0:\tWhen calling %v using nil Capture poiter.", "m.Start")
 		{
 			var m *Monitor
-			m.Start()
+			_ = m.Start()
 		}
 	}
 	t.Logf("\t%s\tShould be able to make the Start call and not crash.", succeed)
@@ -53,7 +53,7 @@ func TestMonitorElapsed(t *testing.T) {
 		t.Logf("\tTest 0:\tWhen calling %v.", target)
 		{
 			area = generateRandomString(8)
-			m = NewMonitor(area)
+			m, _ = NewMonitor(area)
 		}
 
 		assert.Assert(t, m != nil)

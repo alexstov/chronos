@@ -1,4 +1,4 @@
-package rtm
+package watch
 
 import (
 	"testing"

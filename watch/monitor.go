@@ -28,10 +28,10 @@ func NewMonitor(area string, start bool) (*Monitor, error) {
 	monitor := Monitor{ID: monID, Area: area, running: false, elapsed: 0}
 
 	if start {
-		monitor.Start()
+		err = monitor.Start()
 	}
 
-	return &monitor, nil
+	return &monitor, err
 }
 
 // Start starts a new monitor.

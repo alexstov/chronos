@@ -1,4 +1,4 @@
-// Package chronos provides performance monitoring routines
+// Package watch provides performance monitoring routines
 package watch
 
 import (

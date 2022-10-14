@@ -1,3 +1,5 @@
+github.com/brianvoe/gofakeit/v6 v6.19.0 h1:g+yJ+meWVEsAmR+bV4mNM/eXI0N+0pZ3D+Mi+G5+YQo=
+github.com/brianvoe/gofakeit/v6 v6.19.0/go.mod h1:Ow6qC71xtwm79anlwKRlWZW6zVq9D2XHE4QSSMP/rU8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/gildas/go-errors v0.3.2 h1:5JRS+Y0sz3nVYHg4VB5n/AxPxnSlEJa6SJGiGap5P9M=
 github.com/gildas/go-errors v0.3.2/go.mod h1:z1D8TK2JJG46uF3X8gAkE5W9useEXv71Ain9beY6re8=

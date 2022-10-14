@@ -1,10 +1,15 @@
-// Package chronos provides performance monitoring routines
+// Package watch provides performance monitoring routines
 package watch
 
 import (
 	"context"
 	"strconv"
 	"time"
+)
+
+const (
+	unknownArea = "Unknown"
+	totalArea   = "Total"
 )
 
 // NewWatcher creates a new watcher.
@@ -30,30 +35,6 @@ func NewWatcher(name string, options ...interface{}) (watch *Watch, err error) {
 	return &w, err
 }
 
-// DurationUnits of duration.
-type DurationUnits int
-
-const (
-	// Nanoseconds ...
-	Nanoseconds DurationUnits = iota
-	// Microseconds ...
-	Microseconds
-	// Milliseconds ...
-	Milliseconds
-	// Seconds ...
-	Seconds
-	// Minutes ...
-	Minutes
-	// Hours ...
-	Hours
-)
-
-const (
-	unknownArea     = "Unknown"
-	totalArea       = "Total"
-	initMonitorSize = 0
-)
-
 // LogMetricsFunc defines a function to log the watch metrics.
 type LogMetricsFunc func(kvp [][]string)
 
@@ -68,23 +49,42 @@ type Watch struct {
 	context     context.Context
 }
 
-// WatcherContext adds watcher to the context.
-func WatcherContext(ctx context.Context, name string, options ...Optioner) (context.Context, error) {
-	watch, err := NewWatcher(name, options)
-	if err != nil {
-		return nil, err
-	}
-
-	watchCtx := NewTraceWatchContext(ctx, watch)
-
-	return watchCtx, nil
-}
-
 // Start starts a new monitor.
 func Start(ctx context.Context, sector string) (mon *Monitor, err error) {
 	watch := GetWatch(ctx)
 	watch.context = ctx
 	return watch.start(sector), nil
+}
+
+// Finish captures elapsed monitors, logs Capture info, and ends it.
+func Finish(ctx context.Context) (err error) {
+	w := GetWatch(ctx)
+
+	for _, a := range w.aggregators {
+		a.Aggregate()
+	}
+	var aggrTotal time.Duration
+	for _, a := range w.aggregators {
+		aggrTotal += a.Elapsed
+	}
+
+	if _, err = w.elapsed.Stop(); err != nil {
+		return err
+	}
+
+	w.Unknown = w.elapsed.elapsed - aggrTotal
+
+	w.log()
+
+	return nil
+}
+
+// Running returns true if watch is running.
+func (w *Watch) Running() bool {
+	if w == nil {
+		return false
+	}
+	return w.elapsed.running
 }
 
 // Start starts RTM area capture.
@@ -113,40 +113,18 @@ func (w *Watch) start(sector string) (mon *Monitor) {
 	return mon
 }
 
-// Finish captures elapsed monitors, logs Capture info, and ends it.
-func Finish(ctx context.Context) (err error) {
-	w := GetWatch(ctx)
-
-	for _, a := range w.aggregators {
-		a.Aggregate()
-	}
-	var aggrTotal time.Duration
-	for _, a := range w.aggregators {
-		aggrTotal += a.Elapsed
-	}
-
-	if _, err = w.elapsed.Stop(); err != nil {
-		return err
-	}
-
-	w.Unknown = w.elapsed.elapsed - aggrTotal
-
-	w.log()
-
-	return nil
-}
-
 func (w *Watch) log() {
 	fields := [][]string{
 		{"Watcher", w.Name},
-		{"Total", durationString(w.elapsed.elapsed, w.units)},
+		{"Trace", GetTrace(w.context).String()},
+		{totalArea, durationString(w.elapsed.elapsed, w.units)},
 	}
 
 	for _, a := range w.aggregators {
 		fields = append(fields, []string{a.Area, durationString(a.Elapsed, w.units)})
 	}
 
-	fields = append(fields, []string{"Unknown", durationString(w.Unknown, w.units)})
+	fields = append(fields, []string{unknownArea, durationString(w.Unknown, w.units)})
 
 	if w.LogMetrics != nil {
 		w.LogMetrics(fields)

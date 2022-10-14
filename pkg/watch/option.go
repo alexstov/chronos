@@ -10,6 +10,24 @@ const (
 	LogFunc
 )
 
+// DurationUnits of duration.
+type DurationUnits int
+
+const (
+	// Nanoseconds ...
+	Nanoseconds DurationUnits = iota
+	// Microseconds ...
+	Microseconds
+	// Milliseconds ...
+	Milliseconds
+	// Seconds ...
+	Seconds
+	// Minutes ...
+	Minutes
+	// Hours ...
+	Hours
+)
+
 // ConfigOption of th capture.
 type ConfigOption struct {
 	ID  Option

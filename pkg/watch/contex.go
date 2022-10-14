@@ -27,8 +27,8 @@ type WatcherIDKey int
 // Declare a key with the value of zero of type userKey.
 const watcherIDKey WatcherIDKey = 1
 
-// NewTraceContext creates new context with trace id.
-func NewTraceContext(ctx context.Context) context.Context {
+// TraceContext creates new context with trace id.
+func TraceContext(ctx context.Context) context.Context {
 	// Create a traceID for this request.
 	traceID := TraceID(uuid.New())
 
@@ -39,8 +39,20 @@ func NewTraceContext(ctx context.Context) context.Context {
 	return ctxTrace
 }
 
-// GetTraceID extracts trace id form the context.
-func GetTraceID(ctx context.Context) uuid.UUID {
+// WatcherContext adds watcher to the context.
+func WatcherContext(ctx context.Context, name string, options ...Optioner) (context.Context, error) {
+	watch, err := NewWatcher(name, options)
+	if err != nil {
+		return nil, err
+	}
+
+	watchCtx := newWatchContextWithTrace(ctx, watch)
+
+	return watchCtx, nil
+}
+
+// GetTrace extracts trace id form the context.
+func GetTrace(ctx context.Context) uuid.UUID {
 	// Retrieve that traceID value from the Context value bag.
 	if t, ok := ctx.Value(traceIDKey).(TraceID); ok {
 		return uuid.UUID(t)
@@ -49,9 +61,19 @@ func GetTraceID(ctx context.Context) uuid.UUID {
 	return uuid.Nil
 }
 
-// NewTraceWatchContext creates new context with trace id and watch.
-func NewTraceWatchContext(ctx context.Context, watch *Watch) context.Context {
-	ctxTrace := NewTraceContext(ctx)
+// GetWatch extracts watch form the context.
+func GetWatch(ctx context.Context) *Watch {
+	// Retrieve watcher value from the Context value bag.
+	if t, ok := ctx.Value(watcherIDKey).(WatcherType); ok {
+		return t
+	}
+
+	return nil
+}
+
+// newWatchContextWithTrace creates new context with trace id and watch.
+func newWatchContextWithTrace(ctx context.Context, watch *Watch) context.Context {
+	ctxTrace := TraceContext(ctx)
 
 	// Create a traceID for this request.
 	watcherID := WatcherType(watch)
@@ -61,14 +83,4 @@ func NewTraceWatchContext(ctx context.Context, watch *Watch) context.Context {
 	ctxWatcher := context.WithValue(ctxTrace, watcherIDKey, watcherID)
 
 	return ctxWatcher
-}
-
-// GetWatch extracts trace id form the context.
-func GetWatch(ctx context.Context) *Watch {
-	// Retrieve watcher value from the Context value bag.
-	if t, ok := ctx.Value(watcherIDKey).(WatcherType); ok {
-		return t
-	}
-
-	return nil
 }

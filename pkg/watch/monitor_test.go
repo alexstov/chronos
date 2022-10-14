@@ -1,22 +1,23 @@
 package watch
 
 import (
-	"gotest.tools/assert"
 	"math/rand"
 	"testing"
 	"time"
+
+	"gotest.tools/assert"
 )
 
 func TestMonitorNewMonitor(t *testing.T) {
 	var m *Monitor
 	var area string
-	var target = "NewMonitor"
+	target := "NewMonitor"
 	t.Log("Given the need to test NewMonitor.")
 	{
 		t.Logf("\tTest 0:\tWhen calling %v.", target)
 		{
 			area = generateRandomString(8)
-			m, _ = NewMonitor(area)
+			m, _ = NewMonitor(area, false)
 		}
 	}
 	assert.Assert(t, m != nil)
@@ -47,13 +48,13 @@ func TestMonitorNilPtr(t *testing.T) {
 func TestMonitorElapsed(t *testing.T) {
 	var m *Monitor
 	var area string
-	var target = "NewMonitor"
+	target := "NewMonitor"
 	t.Log("Given the need to test NewMonitor.")
 	{
 		t.Logf("\tTest 0:\tWhen calling %v.", target)
 		{
 			area = generateRandomString(8)
-			m, _ = NewMonitor(area)
+			m, _ = NewMonitor(area, false)
 		}
 
 		assert.Assert(t, m != nil)

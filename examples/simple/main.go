@@ -19,18 +19,23 @@ func main() {
 	xs := []float64{98, 93, 77, 82, 83}
 
 	total := 0.0
-	t1, err := watch.Start(ctx, "Loop")
+	m1, err := watch.Start(ctx, "Loop")
 	if err != nil {
 		fmt.Println("watch.Start(ctx, \"Loop\") failed")
 	}
 	for _, v := range xs {
-		time.Sleep(time.Duration(v) * time.Microsecond)
+		time.Sleep(time.Duration(v) * time.Millisecond)
 		total += v
 	}
-	duration, _ := t1.Stop()
-	fmt.Println("Loop duration is ", duration)
+	duration, _ := m1.Stop()
 
-	t2, _ := watch.Start(ctx, OpsIO.String())
-	fmt.Println(total / float64(len(xs)))
-	t2.Stop()
+	m2, _ := watch.Start(ctx, OpsIO.String())
+	fmt.Println("Loop duration is ", duration)
+	fmt.Println("Total sleep time in the loop is ", time.Duration(total)*time.Millisecond)
+	_, _ = m2.Stop()
+
+	m3, _ := watch.NewMonitor("Untracked", true)
+	time.Sleep(time.Duration(1500) * time.Millisecond)
+	t3, _ := m3.Stop()
+	fmt.Printf("Untracked delay <%v>\n", t3)
 }

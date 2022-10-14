@@ -17,7 +17,7 @@ type Monitor struct {
 }
 
 // NewMonitor creates new operation monitor.
-func NewMonitor(area string) (*Monitor, error) {
+func NewMonitor(area string, start bool) (*Monitor, error) {
 	var err error
 	var monID uuid.UUID
 
@@ -25,7 +25,13 @@ func NewMonitor(area string) (*Monitor, error) {
 		return nil, errors.Wrapf(err, "failed to create the new monitor Random ID for <%v>", area)
 	}
 
-	return &Monitor{ID: monID, Area: area, running: false, elapsed: 0}, nil
+	monitor := Monitor{ID: monID, Area: area, running: false, elapsed: 0}
+
+	if start {
+		monitor.Start()
+	}
+
+	return &monitor, nil
 }
 
 // Start starts a new monitor.

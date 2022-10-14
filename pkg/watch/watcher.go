@@ -1,6 +1,11 @@
 package watch
 
+import "context"
+
 // Watcher interface.
 type Watcher interface {
-	Stop() (err error)
+	Start(ctx context.Context, sector string) *Monitor
+	Finish(ctx context.Context) error
+	Running() bool
+	Units() DurationUnits
 }

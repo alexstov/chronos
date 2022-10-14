@@ -32,3 +32,27 @@ func TestWatcherContext(t *testing.T) {
 		}
 	}
 }
+
+func TestWatcherContextOptionsValid(t *testing.T) {
+	var err error
+	var ctx context.Context
+	var watcherName string
+	target := "WatcherContext"
+
+	t.Logf("Given the need to test %s with ConfigOptions.", target)
+	{
+		for i, unit := range []DurationUnits{Nanoseconds, Microseconds, Milliseconds, Seconds, Hours} {
+			t.Logf("\tTest %d:\tWhen calling %v with valid ConfigOptions with valid Units <%v>.", i, target, unit)
+			{
+				watcherName = gofakeit.UUID()
+				ctx, err = WatcherContext(context.TODO(), watcherName, ConfigOption{ID: Units, Val: unit})
+
+				assert.Assert(t, err == nil)
+				t.Logf("\t%s\tShould be able to create WatcherContext with no error.", succeed)
+
+				assert.Equal(t, unit, GetWatch(ctx).Units())
+				t.Logf("\t%s\tThe context watch should have been running after creation %v.", succeed, target)
+			}
+		}
+	}
+}

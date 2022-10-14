@@ -14,7 +14,7 @@ const (
 
 // NewWatcher creates a new watcher.
 func NewWatcher(name string, options ...interface{}) (watch *Watch, err error) {
-	m, err := NewMonitor(totalArea)
+	m, err := NewMonitor(totalArea, false)
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +52,52 @@ type Watch struct {
 // Start starts a new monitor.
 func Start(ctx context.Context, sector string) (mon *Monitor, err error) {
 	watch := GetWatch(ctx)
-	watch.context = ctx
-	return watch.start(sector), nil
+	return watch.Start(ctx, sector), nil
 }
 
 // Finish captures elapsed monitors, logs Capture info, and ends it.
 func Finish(ctx context.Context) (err error) {
 	w := GetWatch(ctx)
+	return w.Finish(ctx)
+}
 
+// Running returns true if watch is running.
+func (w *Watch) Running() bool {
+	if w == nil {
+		return false
+	}
+	return w.elapsed.running
+}
+
+// Start starts RTM area capture.
+func (w *Watch) Start(ctx context.Context, sector string) (mon *Monitor) {
+	if w == nil {
+		return
+	}
+	w.context = ctx
+
+	var err error
+	var aggr *Aggregator
+	var has bool
+
+	// TODO: start immediately, add in another goroutine, signal
+	// TODO: NewMonitor returns pre-created monitor?
+	if mon, err = NewMonitor(sector, false); err != nil {
+		return nil
+	}
+
+	if aggr, has = w.aggregators[sector]; !has {
+		aggr = NewAggregator(sector) // TODO: NewAggregator returns pre-created aggregator?
+		w.aggregators[sector] = aggr
+	}
+	aggr.Add(mon)
+	_ = mon.Start()
+
+	return mon
+}
+
+// Finish captures elapsed monitors, logs Capture info, and ends it.
+func (w *Watch) Finish(ctx context.Context) (err error) {
 	for _, a := range w.aggregators {
 		a.Aggregate()
 	}
@@ -77,40 +115,6 @@ func Finish(ctx context.Context) (err error) {
 	w.log()
 
 	return nil
-}
-
-// Running returns true if watch is running.
-func (w *Watch) Running() bool {
-	if w == nil {
-		return false
-	}
-	return w.elapsed.running
-}
-
-// Start starts RTM area capture.
-func (w *Watch) start(sector string) (mon *Monitor) {
-	if w == nil {
-		return
-	}
-
-	var err error
-	var aggr *Aggregator
-	var has bool
-
-	// TODO: start immediately, add in another goroutine, signal
-	// TODO: NewMonitor returns pre-created monitor?
-	if mon, err = NewMonitor(sector); err != nil {
-		return nil
-	}
-
-	if aggr, has = w.aggregators[sector]; !has {
-		aggr = NewAggregator(sector) // TODO: NewAggregator returns pre-created aggregator?
-		w.aggregators[sector] = aggr
-	}
-	aggr.Add(mon)
-	_ = mon.Start()
-
-	return mon
 }
 
 func (w *Watch) log() {
@@ -150,6 +154,10 @@ func (w *Watch) setCaptureOptions(options ...interface{}) {
 			}
 		}
 	}
+}
+
+func (w *Watch) Units() DurationUnits {
+	return w.units
 }
 
 func durationString(duration time.Duration, units DurationUnits) string {

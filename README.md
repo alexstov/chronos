@@ -10,4 +10,4 @@ To get started, review [samples applications](https://github.com/alexstov/chrono
 
 
 ### Watch
-- [Watch](pkg/watch/README.md) is a runtime metrics collection library.
+- [Watch](watch/README.md) is a runtime metrics collection library.

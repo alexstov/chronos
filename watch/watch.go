@@ -72,7 +72,10 @@ func (w *Watch) Running() bool {
 // Start starts RTM area capture.
 func (w *Watch) Start(ctx context.Context, sector string) (mon *Monitor) {
 	if w == nil {
-		return
+		return nil
+	}
+	if w.aggregators == nil {
+		return nil
 	}
 	w.context = ctx
 

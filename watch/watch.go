@@ -5,6 +5,8 @@ import (
 	"context"
 	"strconv"
 	"time"
+
+	"github.com/gildas/go-errors"
 )
 
 const (
@@ -52,6 +54,9 @@ type Watch struct {
 // Start starts a new monitor.
 func Start(ctx context.Context, sector string) (mon *Monitor, err error) {
 	watch := GetWatch(ctx)
+	if watch == nil {
+		return nil, errors.ArgumentInvalid.With("ctx", ctx)
+	}
 	return watch.Start(ctx, sector), nil
 }
 

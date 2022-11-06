@@ -1,5 +1,19 @@
 package watch
 
+// ConfigOption of th capture.
+type ConfigOption struct {
+	ID  Option
+	Val interface{}
+}
+
+func (o ConfigOption) Option() Option {
+	return o.ID
+}
+
+func (o ConfigOption) Value() interface{} {
+	return o.Val
+}
+
 // Option of the capture.
 type Option int
 
@@ -8,6 +22,8 @@ const (
 	Units Option = iota
 	// LogFunc function to log watch output.
 	LogFunc
+	Percentage
+	Precision
 )
 
 // DurationUnits of duration.
@@ -28,16 +44,24 @@ const (
 	Hours
 )
 
-// ConfigOption of th capture.
-type ConfigOption struct {
-	ID  Option
-	Val interface{}
-}
+// DecimalPlaces for percentage and unit values.
+type DecimalPlaces int
 
-func (o ConfigOption) Option() Option {
-	return o.ID
-}
-
-func (o ConfigOption) Value() interface{} {
-	return o.Val
-}
+const (
+	// DecimalPlacesAll disabled.
+	DecimalPlacesAll DecimalPlaces = iota
+	// DecimalPlacesOnes 1 - ones place.
+	DecimalPlacesOnes
+	// DecimalPlacesTenths 2 - tenths place.
+	DecimalPlacesTenths
+	// DecimalPlacesHundredths 3 - hundredths place.
+	DecimalPlacesHundredths
+	// DecimalPlacesThousandths 4 - thousandths place.
+	DecimalPlacesThousandths
+	// DecimalPlacesTenThousandths 5 - ten thousandths place.
+	DecimalPlacesTenThousandths
+	// DecimalPlacesHundredThousandths  6 - hundred thousandths place.
+	DecimalPlacesHundredThousandths
+	// DecimalPlacesMillions 7 - millions place.
+	DecimalPlacesMillions
+)

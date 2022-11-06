@@ -26,9 +26,11 @@ func NewWatcher(name string, options ...interface{}) (watch *Watch, err error) {
 		elapsed:     m,
 		aggregators: make(map[string]*Aggregator),
 		units:       Milliseconds,
+		percentage:  DecimalPlacesOnes,
+		precision:   DecimalPlacesMillions,
 	}
 
-	w.setCaptureOptions(options)
+	w.setWatcherOptions(options)
 
 	if err = w.elapsed.Start(); err != nil {
 		return nil, err
@@ -42,13 +44,15 @@ type LogMetricsFunc func(kvp [][]string)
 
 // Watch performance profiler instance.
 type Watch struct {
+	context     context.Context
 	Name        string
 	elapsed     *Monitor
 	Unknown     time.Duration
 	aggregators map[string]*Aggregator
 	units       DurationUnits
 	LogMetrics  LogMetricsFunc
-	context     context.Context
+	percentage  DecimalPlaces
+	precision   DecimalPlaces
 }
 
 // Start starts a new monitor.
@@ -129,21 +133,21 @@ func (w *Watch) log() {
 	fields := [][]string{
 		{"Watcher", w.Name},
 		{"Trace", GetTrace(w.context).String()},
-		{totalArea, durationString(w.elapsed.elapsed, w.units)},
+		{totalArea, durationString(w.elapsed.elapsed, w.units, w.precision), percentageString(w.elapsed.elapsed, w.elapsed.elapsed, w.percentage)},
 	}
 
 	for _, a := range w.aggregators {
-		fields = append(fields, []string{a.Area, durationString(a.Elapsed, w.units)})
+		fields = append(fields, []string{a.Area, durationString(a.Elapsed, w.units, w.precision), percentageString(a.Elapsed, w.elapsed.elapsed, w.percentage)})
 	}
 
-	fields = append(fields, []string{unknownArea, durationString(w.Unknown, w.units)})
+	fields = append(fields, []string{unknownArea, durationString(w.Unknown, w.units, w.precision), percentageString(w.Unknown, w.elapsed.elapsed, w.percentage)})
 
 	if w.LogMetrics != nil {
 		w.LogMetrics(fields)
 	}
 }
 
-func (w *Watch) setCaptureOptions(options ...interface{}) {
+func (w *Watch) setWatcherOptions(options ...interface{}) {
 	for _, slice := range options {
 		iSlice, ok := slice.([]interface{})
 		if ok {
@@ -156,6 +160,10 @@ func (w *Watch) setCaptureOptions(options ...interface{}) {
 							w.units, _ = ops.Value().(DurationUnits)
 						case LogFunc:
 							w.LogMetrics = ops.Value().(func([][]string))
+						case Percentage:
+							w.percentage = ops.Value().(DecimalPlaces)
+						case Precision:
+							w.precision = ops.Value().(DecimalPlaces)
 						}
 					}
 				}
@@ -168,10 +176,17 @@ func (w *Watch) Units() DurationUnits {
 	return w.units
 }
 
-func durationString(duration time.Duration, units DurationUnits) string {
+func percentageString(elapsed time.Duration, total time.Duration, precision DecimalPlaces) string {
+	prec := int(precision) - 1
+	percentage := float64(elapsed) / float64(total) * 100
+
+	return strconv.FormatFloat(percentage, 'f', prec, 64) + "%"
+}
+
+func durationString(duration time.Duration, units DurationUnits, precision DecimalPlaces) string {
 	const baseTen = 10
-	const numberSix = 6
 	const numberSixtyFour = 64
+	prec := int(precision) - 1
 
 	switch units {
 	case Nanoseconds:
@@ -181,11 +196,11 @@ func durationString(duration time.Duration, units DurationUnits) string {
 	case Milliseconds:
 		return strconv.FormatInt(duration.Milliseconds(), baseTen) + "ms"
 	case Seconds:
-		return strconv.FormatFloat(duration.Seconds(), 'f', numberSix, numberSixtyFour) + "s"
+		return strconv.FormatFloat(duration.Seconds(), 'f', prec, numberSixtyFour) + "s"
 	case Minutes:
-		return strconv.FormatFloat(duration.Minutes(), 'f', numberSix, numberSixtyFour) + "min"
+		return strconv.FormatFloat(duration.Minutes(), 'f', prec, numberSixtyFour) + "min"
 	case Hours:
-		return strconv.FormatFloat(duration.Hours(), 'f', numberSix, numberSixtyFour) + "h"
+		return strconv.FormatFloat(duration.Hours(), 'f', prec, numberSixtyFour) + "h"
 	default:
 		return strconv.FormatInt(duration.Milliseconds(), baseTen) + "ms"
 	}

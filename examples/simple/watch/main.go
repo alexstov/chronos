@@ -9,7 +9,13 @@ import (
 )
 
 func main() {
-	ctx, err := watch.WatcherContext(context.Background(), ChronosSampleSimple.String(), watch.ConfigOption{ID: watch.Units, Val: watch.Microseconds}, watch.ConfigOption{ID: watch.LogFunc, Val: LogMetrics})
+	ctx, err := watch.WatcherContext(context.Background(), ChronosSampleSimple.String(),
+		watch.ConfigOption{ID: watch.Units, Val: watch.Seconds},
+		watch.ConfigOption{ID: watch.Precision, Val: watch.DecimalPlacesHundredths},
+		watch.ConfigOption{ID: watch.LogFunc, Val: LogMetrics},
+		watch.ConfigOption{ID: watch.Percentage, Val: watch.DecimalPlacesTenths})
+	defer func() { _ = watch.Finish(ctx) }()
+
 	if err != nil {
 		fmt.Printf("error")
 	} else {

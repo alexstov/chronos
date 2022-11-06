@@ -15,7 +15,8 @@ all: clean lint build test clean-mock
 build: clean
 	@echo "Building ${NAME}..."
 	@go build -tags '$(TAGS)' ./...
-	@go build -tags '$(TAGS)' -o ./examples/bin/ ./examples/simple/
+	@go build -tags '$(TAGS)' -o ./examples/bin/simple/watch ./examples/simple/watch
+	@go build -tags '$(TAGS)' -o ./examples/bin/simple/throttle ./examples/simple/throttle
 
 .PHONY: test
 test: build mock
@@ -35,11 +36,6 @@ format:
 	@go mod tidy
 	@gofumpt -l -w . #go install mvdan.cc/gofumpt@latest
 
-.PHONY: serve
-serve: build
-	@echo "Starting ${NAME}"
-	@go run -tags '$(TAGS)' ./cmd/serve/
-
 .PHONY: mock
 mock:
 	@echo "Generating mocks"
@@ -50,4 +46,6 @@ mock:
 .PHONY: clean-mock
 clean-mock:
 	@echo "Cleaning mocks ..."
+	@rm -rf examples/bin/*
+	@rm -rf bin/*
 	@rm -rf mock/*

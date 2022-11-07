@@ -48,7 +48,7 @@ func TestAwait(t *testing.T) {
 			for {
 				select {
 				case <-ctx.Done():
-					break
+					return
 				default:
 					l.Await() // limit the throttle.
 					ch <- 1

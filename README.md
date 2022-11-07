@@ -1,4 +1,4 @@
-# ![Chronos (X4s)](https://github.com/alexstov/chronos/blob/master/img/Sling.png)
+# ![Chronos (X4s)](https://github.com/alexstov/chronos/blob/master/img/Sling.jpg)
 
 ## Goal
 Provide reusable Golang library for performance monitoring, metrics collection, and optimization.

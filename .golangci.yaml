@@ -1,0 +1,98 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+  build-tags:
+    - enable_new_db
+
+linters:
+  enable:
+#    - deadcode  The linter 'deadcode' is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+#    - structcheck
+    - typecheck
+    - unused
+#    - varcheck
+    - asciicheck
+    - bodyclose
+    - cyclop
+    - depguard
+    - dogsled
+    - durationcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - importas
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - noctx
+    - nolintlint
+    - prealloc
+    - predeclared
+    - promlinter
+    - revive
+#    - rowserrcheck
+#    - sqlclosecheck
+    - stylecheck
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+#    - wastedassign
+    - whitespace
+  disable:
+    - gci
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: services/db/dbtypes/common.go
+      linters:
+        - revive
+    - path: v2/internal/domain/...
+      linters:
+        - gochecknoglobals
+    - path: v2/...
+      linters:
+        - revive
+    - path: _test\.go
+      linters:
+        - funlen
+        - bodyclose
+        - cyclop
+        - gocognit
+        - govet
+        - revive
+        - stylecheck
+    - path: testMocks.go
+      linters:
+        - funlen
+        - gomnd

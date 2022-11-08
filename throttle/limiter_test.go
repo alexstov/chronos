@@ -14,7 +14,7 @@ func TestLimiter(t *testing.T) {
 	count := 3
 
 	t.Logf("Given the need to test %s.", target)
-	l := NewLimiter(time.Duration(time.Second), count)
+	l := NewLimiter(time.Second, count)
 	lim, ok := l.(*limiter)
 	t.Logf("\t%s\tAfter calling NewLimiter()", succeed)
 	assert.True(t, ok)
@@ -40,7 +40,7 @@ func TestAwait(t *testing.T) {
 	ch := make(chan int)
 
 	// Three requests per sec.
-	l := NewLimiter(time.Duration(time.Duration(seconds)*time.Second), count)
+	l := NewLimiter(time.Duration(seconds)*time.Second, count)
 
 	// Worker goroutines.
 	for i := 0; i < workers; i++ {

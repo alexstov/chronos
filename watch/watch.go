@@ -159,11 +159,11 @@ func (w *Watch) setWatcherOptions(options ...interface{}) {
 						case Units:
 							w.units, _ = ops.Value().(DurationUnits)
 						case LogFunc:
-							w.LogMetrics = ops.Value().(func([][]string))
+							w.LogMetrics, _ = ops.Value().(func([][]string))
 						case Percentage:
-							w.percentage = ops.Value().(DecimalPlaces)
+							w.percentage, _ = ops.Value().(DecimalPlaces)
 						case Precision:
-							w.precision = ops.Value().(DecimalPlaces)
+							w.precision, _ = ops.Value().(DecimalPlaces)
 						}
 					}
 				}
@@ -172,15 +172,21 @@ func (w *Watch) setWatcherOptions(options ...interface{}) {
 	}
 }
 
+// Units return DurationUnits for the watch.
 func (w *Watch) Units() DurationUnits {
 	return w.units
 }
 
+const (
+	number64  = 64
+	number100 = 100
+)
+
 func percentageString(elapsed time.Duration, total time.Duration, precision DecimalPlaces) string {
 	prec := int(precision) - 1
-	percentage := float64(elapsed) / float64(total) * 100
+	percentage := float64(elapsed) / float64(total) * number100
 
-	return strconv.FormatFloat(percentage, 'f', prec, 64) + "%"
+	return strconv.FormatFloat(percentage, 'f', prec, number64) + "%"
 }
 
 func durationString(duration time.Duration, units DurationUnits, precision DecimalPlaces) string {

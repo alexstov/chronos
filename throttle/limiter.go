@@ -2,6 +2,7 @@ package throt
 
 import "time"
 
+// Limiter defines abstract rate limiter.
 type Limiter interface {
 	// Await blocks execution for the desired throttle.
 	Await()

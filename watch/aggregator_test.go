@@ -9,7 +9,8 @@ import (
 func TestAggregatorNewAggregator(t *testing.T) {
 	var a *Aggregator
 	var area string
-	var target = "NewAggregator"
+
+	target := "NewAggregator"
 	t.Log("Given the need to test NewAggregator.")
 	{
 		t.Logf("\tTest 0:\tWhen calling %v.", target)

@@ -6,10 +6,12 @@ type ConfigOption struct {
 	Val interface{}
 }
 
+// Option return config option identifier.
 func (o ConfigOption) Option() Option {
 	return o.ID
 }
 
+// Value return config option value.
 func (o ConfigOption) Value() interface{} {
 	return o.Val
 }
@@ -22,7 +24,9 @@ const (
 	Units Option = iota
 	// LogFunc function to log watch output.
 	LogFunc
+	// Percentage option for performance stats.
 	Percentage
+	// Precision option for float values.
 	Precision
 )
 

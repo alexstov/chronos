@@ -1,3 +1,4 @@
+// Package throt provides goroutine concurrency API for pooling and rate limiting.
 package throt
 
 import (
@@ -7,6 +8,7 @@ import (
 	"sync/atomic"
 )
 
+// WorkerPool defines abstract worker pool of goroutines.
 type WorkerPool interface {
 	io.Closer
 	Run(routine Routine)

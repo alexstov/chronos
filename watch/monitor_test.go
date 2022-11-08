@@ -71,6 +71,8 @@ func TestMonitorElapsed(t *testing.T) {
 	}
 }
 
+//
+//nolint:gosec
 func generateRandomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	digits := "0123456789"

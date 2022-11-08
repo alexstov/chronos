@@ -8,7 +8,6 @@ const (
 func success(success bool) string {
 	if success {
 		return succeed
-	} else {
-		return failed
 	}
+	return failed
 }

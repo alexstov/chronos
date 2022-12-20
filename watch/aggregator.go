@@ -2,6 +2,8 @@ package watch
 
 import (
 	"time"
+
+	"github.com/gildas/go-errors"
 )
 
 const aggrInitCapacity = 20
@@ -24,10 +26,17 @@ func (a *Aggregator) Add(mon *Monitor) {
 }
 
 // Aggregate aggregates elapsed durations of each monitor.
-func (a *Aggregator) Aggregate() {
+func (a *Aggregator) Aggregate() (err error) {
 	a.Elapsed = 0
 
 	for _, mon := range a.Monitors {
+		if mon.running {
+			if _, err = mon.Stop(); err == nil {
+				err = errors.RuntimeError.With("dangling monitors may distort aggregator accuracy", "monitor", mon.Area)
+			}
+		}
 		a.Elapsed += mon.elapsed
 	}
+
+	return err
 }

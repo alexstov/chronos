@@ -4,7 +4,7 @@ import "context"
 
 // Watcher interface.
 type Watcher interface {
-	Start(ctx context.Context, sector string) *Monitor
+	Start(ctx context.Context, name string) *Monitor
 	Finish(ctx context.Context) error
 	Running() bool
 	Units() DurationUnits

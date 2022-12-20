@@ -56,12 +56,12 @@ type Watch struct {
 }
 
 // Start starts a new monitor.
-func Start(ctx context.Context, sector string) (mon *Monitor, err error) {
+func Start(ctx context.Context, name string) (mon *Monitor, err error) {
 	watch := GetWatch(ctx)
 	if watch == nil {
 		return nil, errors.ArgumentInvalid.With("ctx", ctx)
 	}
-	return watch.Start(ctx, sector), nil
+	return watch.Start(ctx, name), nil
 }
 
 // Finish captures elapsed monitors, logs Capture info, and ends it.
@@ -79,7 +79,7 @@ func (w *Watch) Running() bool {
 }
 
 // Start starts RTM area capture.
-func (w *Watch) Start(ctx context.Context, sector string) (mon *Monitor) {
+func (w *Watch) Start(ctx context.Context, name string) (mon *Monitor) {
 	if w == nil {
 		return nil
 	}
@@ -94,13 +94,13 @@ func (w *Watch) Start(ctx context.Context, sector string) (mon *Monitor) {
 
 	// TODO: start immediately, add in another goroutine, signal
 	// TODO: NewMonitor returns pre-created monitor?
-	if mon, err = NewMonitor(sector, false); err != nil {
+	if mon, err = NewMonitor(name, false); err != nil {
 		return nil
 	}
 
-	if aggr, has = w.aggregators[sector]; !has {
-		aggr = NewAggregator(sector) // TODO: NewAggregator returns pre-created aggregator?
-		w.aggregators[sector] = aggr
+	if aggr, has = w.aggregators[name]; !has {
+		aggr = NewAggregator(name) // TODO: NewAggregator returns pre-created aggregator?
+		w.aggregators[name] = aggr
 	}
 	aggr.Add(mon)
 	_ = mon.Start()
@@ -110,8 +110,11 @@ func (w *Watch) Start(ctx context.Context, sector string) (mon *Monitor) {
 
 // Finish captures elapsed monitors, logs Capture info, and ends it.
 func (w *Watch) Finish(ctx context.Context) (err error) {
+	var aggrErrors int
 	for _, a := range w.aggregators {
-		a.Aggregate()
+		if err = a.Aggregate(); err != nil {
+			aggrErrors++
+		}
 	}
 	var aggrTotal time.Duration
 	for _, a := range w.aggregators {
@@ -125,6 +128,13 @@ func (w *Watch) Finish(ctx context.Context) (err error) {
 	w.Unknown = w.elapsed.elapsed - aggrTotal
 
 	w.log()
+
+	switch {
+	case aggrErrors == 1:
+		return errors.Wrapf(err, "monitor aggregation error")
+	case aggrErrors > 1:
+		return errors.Wrapf(err, "multiple monitor aggregation errors, count <%d>", aggrErrors)
+	}
 
 	return nil
 }

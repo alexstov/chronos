@@ -14,8 +14,8 @@ func TestWatchNilPtr(t *testing.T) {
 		{
 			var watch *Watch
 			ctx := context.Background()
-			sector := gofakeit.UUID()
-			watch.Start(ctx, sector)
+			name := gofakeit.UUID()
+			watch.Start(ctx, name)
 		}
 	}
 	t.Logf("\t%s\tShould be able to make the Start call and not crash.", succeed)
@@ -28,10 +28,10 @@ func TestWatchNilContext(t *testing.T) {
 		{
 			var watch *Watch
 			var ctx context.Context
-			sector := gofakeit.UUID()
+			name := gofakeit.UUID()
 
 			watch = &Watch{}
-			watch.Start(ctx, sector)
+			watch.Start(ctx, name)
 		}
 	}
 	t.Logf("\t%s\tShould be able to make the Start call and not crash.", succeed)

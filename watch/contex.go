@@ -20,7 +20,7 @@ const traceIDKey TraceIDKey = 0
 // WatcherType is context watcher.
 type WatcherType Watcher
 
-// WatcherIDKey is the type of value to use for the key. The key is
+// WatcherIDKey is the type of value to use fЕor the key. The key is
 // type specific and only values of the same type will match.
 type WatcherIDKey int
 

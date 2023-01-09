@@ -37,8 +37,7 @@ func NewMonitor(area string, start bool) (*Monitor, error) {
 // Start starts a new monitor.
 func (m *Monitor) Start() (err error) {
 	if m == nil {
-		err := errors.Error{}
-		err.WithCause(errors.NotInitialized.With("monitor is nil"))
+		err := errors.ArgumentExpected.With("*Monitor is nil")
 		return err
 	}
 

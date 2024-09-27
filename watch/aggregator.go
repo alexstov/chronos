@@ -1,9 +1,8 @@
 package watch
 
 import (
-	"time"
-
 	"github.com/gildas/go-errors"
+	"time"
 )
 
 const aggrInitCapacity = 20

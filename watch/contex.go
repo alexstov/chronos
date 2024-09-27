@@ -46,6 +46,10 @@ func WatcherContext(ctx context.Context, name string, options ...Optioner) (cont
 		return nil, err
 	}
 
+	if traceID := GetTrace(ctx); traceID != uuid.Nil {
+		return ctx, nil
+	}
+
 	watchCtx := newWatcherContextWithTrace(ctx, watch)
 
 	return watchCtx, nil
